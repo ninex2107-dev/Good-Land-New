@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Royal New Land System</title>
+    <style>
+        /* --- ธีม Royal (หรูหรา ดำ-ทอง) --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #1e1e1e;
+            border: 2px solid #d4af37; /* สีทอง */
+            border-radius: 10px;
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+            text-align: center;
+        }
+
+        h2 { color: #d4af37; }
+
+        /* หน้า Login */
+        #login-section img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background-color: white; /* ใส่พื้นหลังขาวให้รูปวาดเห็นชัด */
+            padding: 10px;
+        }
+        
+        input {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #d4af37;
+            background-color: #2a2a2a;
+            color: white;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #d4af37;
+            color: #121212;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #b5952f;
+        }
+
+        /* เมนู Admin */
+        .menu-bar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 20px;
+        }
+
+        /* รายการข้อมูล */
+        .list-item {
+            background-color: #2a2a2a;
+            margin: 10px 0;
+            padding: 15px;
+            border-left: 4px solid #d4af37;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .score-controls button {
+            width: 35px;
+            height: 35px;
+            font-size: 18px;
+            padding: 0;
+        }
+
+        .score-display {
+            font-size: 18px;
+            font-weight: bold;
+            color: #d4af37;
+            margin: 0 15px;
+            display: inline-block;
+            width: 30px;
+        }
+
+        select {
+            padding: 8px;
+            background-color: #1e1e1e;
+            color: #d4af37;
+            border: 1px solid #d4af37;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- ================= หน้าเข้าสู่ระบบ (Login) ================= -->
+        <div id="login-section">
+            <!-- ดึงรูปภาพที่คุณแนบมาแสดงผล -->
+            <img src="image.png" alt="Royal New Land Logo">
+            <h2>ลงชื่อเข้าใช้ (ระบบภายใน)</h2>
+            <input type="text" id="username" placeholder="ชื่อผู้ใช้"><br>
+            <input type="password" id="password" placeholder="รหัสผ่าน"><br>
+            <button onclick="login()">เข้าสู่ระบบ</button>
+            <p id="login-error" style="color: #ff4c4c; display: none;">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!</p>
+        </div>
+
+        <!-- ================= หน้า Admin Dashboard ================= -->
+        <div id="admin-section" class="hidden">
+            <h2>Royal Admin System</h2>
+            <div class="menu-bar">
+                <button onclick="showTab('score-tab')">ช่องที่ 1: จัดการคะแนน</button>
+                <button onclick="showTab('rank-tab')">ช่องที่ 2: จัดการยศ</button>
+                <button onclick="logout()" style="background-color: #ff4c4c; color: white;">ออกจากระบบ</button>
+            </div>
+
+            <!-- ช่องที่ 1: ระบบหัก/เพิ่มคะแนน -->
+            <div id="score-tab">
+                <h3 style="color: #d4af37; text-align: left;">ระบบจัดการคะแนน (0-100)</h3>
+                <div id="score-list"></div>
+            </div>
+
+            <!-- ช่องที่ 2: ระบบให้ยศ -->
+            <div id="rank-tab" class="hidden">
+                <h3 style="color: #d4af37; text-align: left;">ระบบจัดการยศ</h3>
+                <div id="rank-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= ระบบ JavaScript ================= -->
+    <script>
+        // ฐานข้อมูลจำลอง (รายชื่อคนที่ลงไว้ในระบบ)
+        let members = [
+            { id: 1, name: "สมชาย ผู้ภักดี", score: 100, rank: "Member" },
+            { id: 2, name: "สมหญิง นิวแลนด์", score: 50, rank: "Member" },
+            { id: 3, name: "จอห์น ดี", score: 99, rank: "Member" }
+        ];
+
+        // 1. ระบบเข้าสู่ระบบ
+        function login() {
+            const user = document.getElementById("username").value;
+            const pass = document.getElementById("password").value;
+
+            // ตรวจสอบชื่อ Eric และรหัส 1234
+            if (user === "Eric" && pass === "1234") {
+                document.getElementById("login-section").classList.add("hidden");
+                document.getElementById("admin-section").classList.remove("hidden");
+                renderData(); // โหลดข้อมูลมาแสดง
+            } else {
+                document.getElementById("login-error").style.display = "block";
+            }
+        }
+
+        // 2. ระบบออกจากระบบ
+        function logout() {
+            document.getElementById("username").value = "";
+            document.getElementById("password").value = "";
+            document.getElementById("login-error").style.display = "none";
+            document.getElementById("admin-section").classList.add("hidden");
+            document.getElementById("login-section").classList.remove("hidden");
+        }
+
+        // 3. ระบบสลับหน้าจอ (หมวดหมู่)
+        function showTab(tabId) {
+            document.getElementById("score-tab").classList.add("hidden");
+            document.getElementById("rank-tab").classList.add("hidden");
+            document.getElementById(tabId).classList.remove("hidden");
+        }
+
+        // 4. ฟังก์ชันอัปเดตหน้าจอ (สร้างรายการรายชื่อ)
+        function renderData() {
+            const scoreList = document.getElementById("score-list");
+            const rankList = document.getElementById("rank-list");
+            
+            scoreList.innerHTML = "";
+            rankList.innerHTML = "";
+
+            members.forEach((member, index) => {
+                // สร้าง UI สำหรับช่องที่ 1 (คะแนน)
+                scoreList.innerHTML += `
+                    <div class="list-item">
+                        <div>
+                            <strong>${member.name}</strong> <br>
+                            <span style="font-size: 12px; color: #888;">ยศปัจจุบัน: ${member.rank}</span>
+                        </div>
+                        <div class="score-controls">
+                            <button onclick="updateScore(${index}, -1)">-</button>
+                            <span class="score-display">${member.score}</span>
+                            <button onclick="updateScore(${index}, 1)">+</button>
+                        </div>
+                    </div>
+                `;
+
+                // สร้าง UI สำหรับช่องที่ 2 (ยศ) - มีปุ่มเลือกลงมา (Dropdown) หลังสุด
+                rankList.innerHTML += `
+                    <div class="list-item">
+                        <div>
+                            <strong>${member.name}</strong> <br>
+                            <span style="font-size: 12px; color: #888;">คะแนน: ${member.score}</span>
+                        </div>
+                        <div>
+                            <select onchange="updateRank(${index}, this.value)">
+                                <option value="Member" ${member.rank === 'Member' ? 'selected' : ''}>คนที่อยากให้ยศ (Member)</option>
+                                <option value="Admin" ${member.rank === 'Admin' ? 'selected' : ''}>Admin</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // 5. ระบบคำนวณคะแนน (+ / -)
+        function updateScore(index, change) {
+            let newScore = members[index].score + change;
+            
+            // เช็คเงื่อนไข: ห้ามต่ำกว่า 0 และ ห้ามเกิน 100
+            if (newScore >= 0 && newScore <= 100) {
+                members[index].score = newScore;
+                renderData(); // อัปเดตหน้าจอทันที
+            } else if (newScore < 0) {
+                alert("คะแนนเหลือ 0 แล้ว ไม่สามารถลบได้อีก");
+            } else if (newScore > 100) {
+                alert("คะแนนเต็ม 100 แล้ว ไม่สามารถบวกเพิ่มได้อีก");
+            }
+        }
+
+        // 6. ระบบอัปเดตยศ
+        function updateRank(index, newRank) {
+            members[index].rank = newRank;
+            renderData(); // อัปเดตหน้าจอเพื่อแสดงผลยศใหม่ในทุกหน้า
+            alert(`เปลี่ยนยศของ ${members[index].name} เป็น ${newRank} เรียบร้อยแล้ว`);
+        }
+    </script>
+
+</body>
+</html>
